@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global tweaks */
+html, body { height: 100%; }
+body { @apply bg-slate-50 text-slate-800; }
+
+/* Optional helper for React Flow container heights */
+#flow-wrapper { height: calc(100vh - 280px); }
