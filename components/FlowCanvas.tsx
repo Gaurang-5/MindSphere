@@ -38,7 +38,7 @@ export default function FlowCanvas({
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>[]>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [expandingNodeIds, setExpandingNodeIds] = useState<Set<string>>(new Set());
 
   const nodeTypes = useMemo(
     () => ({
@@ -67,23 +67,43 @@ export default function FlowCanvas({
       position: n.position ?? { x: 0, y: 0 },
     }));
 
-  const toReactFlowEdges = (incomingEdges: any[] = []) =>
-    (incomingEdges ?? []).map((e, idx) => ({
-      id: e.id ?? `${e.source}-${e.target}-${idx}`,
-      source: String(e.source),
-      target: String(e.target),
-      label: e.label ?? e.title ?? "connects to",
-      type: "custom",
-      animated: true,
-      data: {
-        label: e.label ?? e.title ?? "connects to",
-        index: idx, // Pass index for dynamic labeling
-      },
-      style: {
-        stroke: "#2563eb",
-        strokeWidth: 5,
-      },
-    }));
+  const toReactFlowEdges = (incomingEdges: any[] = []) => {
+    // Group edges by source (parent) to number steps per parent
+    const edgesBySource = new Map<string, any[]>();
+    
+    (incomingEdges ?? []).forEach((e: any) => {
+      const source = String(e.source);
+      if (!edgesBySource.has(source)) {
+        edgesBySource.set(source, []);
+      }
+      edgesBySource.get(source)!.push(e);
+    });
+
+    // Create react flow edges with per-parent step numbering
+    const result: any[] = [];
+    edgesBySource.forEach((edgesForParent) => {
+      edgesForParent.forEach((e: any, idx: number) => {
+        result.push({
+          id: e.id ?? `${e.source}-${e.target}-${idx}`,
+          source: String(e.source),
+          target: String(e.target),
+          label: `Step ${idx + 1}`,
+          type: "custom",
+          animated: true,
+          data: {
+            label: `Step ${idx + 1}`,
+            index: idx,
+          },
+          style: {
+            stroke: "#2563eb",
+            strokeWidth: 5,
+          },
+        });
+      });
+    });
+
+    return result;
+  };
 
   // Apply graph on mount or when graph prop changes
   useEffect(() => {
@@ -102,10 +122,14 @@ export default function FlowCanvas({
 
   const expandNode = useCallback(
     async (nodeId: string) => {
-      setIsLoading(true);
+      setExpandingNodeIds((prev) => new Set(prev).add(nodeId));
       const targetNode = nodes.find((n: any) => n.id === nodeId);
       if (!targetNode) {
-        setIsLoading(false);
+        setExpandingNodeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(nodeId);
+          return next;
+        });
         return;
       }
 
@@ -127,6 +151,7 @@ export default function FlowCanvas({
           ? response.data.edges
           : [];
 
+        // Build a map of existing nodes
         const allNodesMap = new Map<string, any>();
         [
           ...nodes.map((n: any) => ({
@@ -140,10 +165,47 @@ export default function FlowCanvas({
         });
         const mergedNodes = Array.from(allNodesMap.values());
 
+        // Merge edges: keep existing + new expansion edges + connect parent to first-level expanded nodes
         const allEdgesMap = new Map<string, any>();
-        [...edges, ...newEdgesRaw].forEach((e: any) => {
+        [...edges].forEach((e: any) => {
           allEdgesMap.set(e.id, e);
         });
+
+        // Add new expansion edges — but only include edges that involve the newly
+        // returned nodes or the parent node to avoid creating spurious links
+        const newNodeIds = new Set(newNodesRaw.map((n: any) => n.id));
+        newEdgesRaw.forEach((e: any) => {
+          if (!e) return;
+          const src = String(e.source);
+          const tgt = String(e.target);
+
+          // Only accept edges that touch a newly added node or the expanding parent
+          if (!newNodeIds.has(src) && !newNodeIds.has(tgt) && src !== nodeId && tgt !== nodeId) {
+            return; // ignore edges that connect unrelated, pre-existing nodes
+          }
+
+          // ensure an id exists and is deterministic
+          const eid = e.id ?? `${src}-${tgt}`;
+          allEdgesMap.set(eid, { ...e, id: eid, source: src, target: tgt });
+        });
+
+        // Add edges from parent node to expanded first-level children
+        const expandedFirstLevelNodes = newNodesRaw.filter(
+          (n: any) => (n.level ?? 0) === ((targetNode.data as any)?.level ?? 0) + 1
+        );
+        
+        expandedFirstLevelNodes.forEach((childNode: any, idx: number) => {
+          const edgeId = `${nodeId}-to-${childNode.id}`;
+          if (!allEdgesMap.has(edgeId)) {
+            allEdgesMap.set(edgeId, {
+              id: edgeId,
+              source: nodeId,
+              target: childNode.id,
+              label: `Step ${idx + 1}`,
+            });
+          }
+        });
+
         const mergedEdges = Array.from(allEdgesMap.values());
 
         const rfNodes = toReactFlowNodes(mergedNodes);
@@ -160,7 +222,11 @@ export default function FlowCanvas({
       } catch (error) {
         console.error("Failed to expand node:", error);
       } finally {
-        setIsLoading(false);
+        setExpandingNodeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(nodeId);
+          return next;
+        });
       }
     },
     [nodes, edges, setNodes, setEdges, context, onGraphChange]
@@ -171,7 +237,7 @@ export default function FlowCanvas({
     data: {
       ...node.data,
       expandNode,
-      isLoading,
+      isLoading: expandingNodeIds.has(node.id),
     },
   }));
 

@@ -44,9 +44,11 @@ export function dagLayout(graph?: Partial<FlowGraph>) {
   const positions: Record<string, { x: number; y: number }> = {};
   if (!graph || !Array.isArray(graph.nodes)) return positions;
 
-  const xgap = 380;
-  const ygap = 220;
-  const maxCols = 4;
+  const nodeCount = graph.nodes.length;
+  // Dynamic spacing based on node count
+  const xgap = Math.max(250, 400 - nodeCount * 10); // tighter horizontal
+  const ygap = Math.min(500, 300 + nodeCount * 8); // more vertical
+  const maxCols = Math.ceil(nodeCount / 3); // adaptive columns
 
   const byLevel: Record<number, string[]> = {};
   for (const n of graph.nodes) {
@@ -79,7 +81,11 @@ export function getLayoutedElements(
   // dagre setup
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: direction });
+  // Dynamic spacing: more vertical, less horizontal, adjusted by node count
+  const nodeCount = (nodes ?? []).length;
+  const dynamicNodeSep = Math.max(40, 120 - nodeCount * 2); // tighter horizontal as more nodes
+  const dynamicRankSep = Math.min(500, 200 + nodeCount * 5); // more vertical as more nodes
+  dagreGraph.setGraph({ rankdir: direction, nodesep: dynamicNodeSep, ranksep: dynamicRankSep });
 
   const nodeWidth = 340;
   const nodeHeight = 140;

@@ -5,7 +5,6 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import FlowCanvas from "@/components/FlowCanvas";
 import LoadingFlowchart from "@/components/LoadingFlowchart";
-import { FaArrowLeft, FaPlus } from "react-icons/fa";
 
 export default function Page() {
   const [prompt, setPrompt] = useState("");
@@ -137,70 +136,64 @@ export default function Page() {
         )}
       </div>
 
-      {/* Floating Bottom Bar - Only show when flowchart is active */}
+      {/* Minimalist Apple-style floating bar - Single line */}
       <AnimatePresence>
         {isFlowchartMode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-0 left-0 right-0 bg-gradient-to-b from-slate-900/50 via-slate-900/80 to-slate-900/95 backdrop-blur-md border-t border-slate-700"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
           >
-            {/* Input Section */}
-            <div className="p-4 border-b border-slate-700">
-              <div className="max-w-7xl mx-auto">
-                <form onSubmit={generate} className="flex gap-3 items-center">
-                  <input
-                    type="text"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Modify your prompt to regenerate flowchart..."
-                    className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    disabled={loading}
-                  />
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg transition-all shadow-lg font-medium disabled:bg-gray-500"
-                    disabled={loading}
-                  >
-                    {loading ? "Regenerating..." : "Regenerate"}
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* Action Buttons Section */}
-            <div className="p-6">
-              <div className="max-w-7xl mx-auto flex items-center gap-4 justify-center">
-                {/* Back Button */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={createNew}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all shadow-lg"
+            <div className="bg-white/95 backdrop-blur-xl border border-slate-200/50 rounded-full shadow-2xl px-6 py-3 flex items-center gap-4">
+              {/* Input */}
+              <form onSubmit={generate} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Regenerate..."
+                  className="bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none w-40"
+                  disabled={loading}
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-full transition-all disabled:bg-gray-400 font-medium"
+                  disabled={loading}
                 >
-                  <FaArrowLeft size={16} />
-                  Back to Input
-                </motion.button>
+                  {loading ? "..." : "Regenerate"}
+                </button>
+              </form>
 
-                {/* Generate New Button */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={createNew}
-                  className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-lg transition-all shadow-lg font-medium"
-                >
-                  <FaPlus size={16} />
-                  Create New Flowchart
-                </motion.button>
-              </div>
+              {/* Divider */}
+              <div className="w-px h-6 bg-slate-300/50" />
+
+              {/* Action buttons */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={createNew}
+                className="text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors"
+              >
+                ← Back
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={createNew}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-full transition-all font-medium"
+              >
+                + New
+              </motion.button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Padding for floating bar */}
-      {isFlowchartMode && <div className="h-40 flex-shrink-0" />}
+      {isFlowchartMode && <div className="h-24 flex-shrink-0" />}
     </div>
   );
 }
