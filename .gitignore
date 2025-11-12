@@ -1,4 +1,7 @@
-node_modules/
+# Next.js
 .next/
+node_modules/
+
+# Env files
 .env
-dist/
+.env.local
