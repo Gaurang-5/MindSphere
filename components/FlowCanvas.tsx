@@ -1,124 +1,234 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import ReactFlow, {
-  MiniMap,
+  Connection,
   Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
+  MiniMap,
   addEdge,
+  useEdgesState,
+  useNodesState,
+  Node,
+  Edge,
+  useReactFlow,
+  Background,
+  EdgeTypes,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import NodeCardEnhanced from "./NodeCardEnhanced";
+import FunnelNode from "./FunnelNode";
+import SpeakerNode from "./SpeakerNode";
+import CustomEdge from "./CustomEdge";
+import { NodeData } from "@/lib/types";
 import axios from "axios";
-import NodeCard from "@/components/NodeCard";
-import { dagLayout } from "@/lib/utils";
+import { getLayoutedElements } from "@/lib/utils";
 
-const nodeTypes = { card: NodeCard } as const;
+const edgeTypes: EdgeTypes = {
+  custom: CustomEdge,
+};
 
 export default function FlowCanvas({
   graph,
   context,
   onGraphChange,
 }: {
-  graph: any;
-  context: string;
-  onGraphChange: (g: any) => void;
+  graph?: any;
+  context?: string;
+  onGraphChange?: (g: any) => void;
 }) {
-  // ✅ Guard against partial/undefined graph
-  const safeGraph = useMemo(() => {
-    const nodes = Array.isArray(graph?.nodes) ? graph.nodes : [];
-    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
-    return { nodes, edges };
-  }, [graph]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>[]>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const positions = useMemo(() => dagLayout(safeGraph), [safeGraph]);
-
-  const rfNodes = useMemo(
-    () =>
-      safeGraph.nodes.map((n: any) => ({
-        id: n.id,
-        type: "card",
-        position: positions?.[n.id] ?? { x: 0, y: 0 }, // ✅ safe access
-        data: {
-          title: n.title,
-          summary: n.summary,
-          details: n.details,
-          onExpand: async () => {
-            try {
-              const { data } = await axios.post("/api/expand", {
-                nodeId: n.id,
-                title: n.title,
-                level: n.level,
-                context,
-              });
-              const merged = mergeGraphs(safeGraph, data, n.id);
-              onGraphChange(merged);
-            } catch (e) {
-              console.error(e);
-            }
-          },
-        },
-      })),
-    [safeGraph, context, positions, onGraphChange]
+  const nodeTypes = useMemo(
+    () => ({
+      card: NodeCardEnhanced,
+      funnel: FunnelNode,
+      speaker: SpeakerNode,
+    }),
+    []
   );
-
-  const rfEdges = useMemo(
-    () =>
-      safeGraph.edges.map((e: any) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        label: e.label,
-      })),
-    [safeGraph]
-  );
-
-  const [, , onNodesChange] = useNodesState(rfNodes);
-  const [, setEdges, onEdgesChange] = useEdgesState(rfEdges);
 
   const onConnect = useCallback(
-    (connection: any) => setEdges((eds) => addEdge(connection, eds)),
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
+  const toReactFlowNodes = (incomingNodes: any[] = []) =>
+    (incomingNodes ?? []).map((n) => ({
+      id: String(n.id),
+      type: n.type ?? "card",
+      data: {
+        title: n.title ?? n.data?.title ?? n.id,
+        subtitle: n.subtitle ?? n.data?.subtitle,
+        content: n.summary ?? n.details ?? n.data?.content ?? "",
+        sections: n.sections ?? n.data?.sections,
+      },
+      position: n.position ?? { x: 0, y: 0 },
+    }));
+
+  const toReactFlowEdges = (incomingEdges: any[] = []) =>
+    (incomingEdges ?? []).map((e, idx) => ({
+      id: e.id ?? `${e.source}-${e.target}-${idx}`,
+      source: String(e.source),
+      target: String(e.target),
+      label: e.label ?? e.title ?? "connects to",
+      type: "custom",
+      animated: true,
+      data: {
+        label: e.label ?? e.title ?? "connects to",
+        index: idx, // Pass index for dynamic labeling
+      },
+      style: {
+        stroke: "#2563eb",
+        strokeWidth: 5,
+      },
+    }));
+
+  // Apply graph on mount or when graph prop changes
+  useEffect(() => {
+    if (graph && graph.nodes) {
+      const rfNodes = toReactFlowNodes(graph.nodes);
+      const rfEdges = toReactFlowEdges(graph.edges ?? []);
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        rfNodes,
+        rfEdges,
+        "LR"
+      );
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+    }
+  }, [graph, setNodes, setEdges]);
+
+  const expandNode = useCallback(
+    async (nodeId: string) => {
+      setIsLoading(true);
+      const targetNode = nodes.find((n: any) => n.id === nodeId);
+      if (!targetNode) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.post<{
+          nodes: any[];
+          edges: any[];
+        }>("/api/expand", {
+          nodeId: targetNode.id,
+          nodeTitle: (targetNode.data as any)?.title,
+          nodeContent: (targetNode.data as any)?.content,
+          context,
+        });
+
+        const newNodesRaw = Array.isArray(response.data.nodes)
+          ? response.data.nodes
+          : [];
+        const newEdgesRaw = Array.isArray(response.data.edges)
+          ? response.data.edges
+          : [];
+
+        const allNodesMap = new Map<string, any>();
+        [
+          ...nodes.map((n: any) => ({
+            id: n.id,
+            title: (n.data as any)?.title,
+            summary: (n.data as any)?.content,
+          })),
+          ...newNodesRaw,
+        ].forEach((n: any) => {
+          allNodesMap.set(n.id, n);
+        });
+        const mergedNodes = Array.from(allNodesMap.values());
+
+        const allEdgesMap = new Map<string, any>();
+        [...edges, ...newEdgesRaw].forEach((e: any) => {
+          allEdgesMap.set(e.id, e);
+        });
+        const mergedEdges = Array.from(allEdgesMap.values());
+
+        const rfNodes = toReactFlowNodes(mergedNodes);
+        const rfEdges = toReactFlowEdges(mergedEdges);
+        const { nodes: layoutedNodes, edges: layoutedEdges } =
+          getLayoutedElements(rfNodes, rfEdges, "LR");
+
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+
+        if (onGraphChange) {
+          onGraphChange({ nodes: mergedNodes, edges: mergedEdges });
+        }
+      } catch (error) {
+        console.error("Failed to expand node:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [nodes, edges, setNodes, setEdges, context, onGraphChange]
+  );
+
+  const nodesWithData = nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      expandNode,
+      isLoading,
+    },
+  }));
+
   return (
-    <div
-      id="flow-canvas"
-      className="bg-white/60 backdrop-blur rounded-2xl border border-slate-200 shadow overflow-hidden"
-      style={{ height: "75vh" }}
-    >
+    <div className="h-full w-full relative" style={{ minHeight: 600 }}>
       <ReactFlow
-        nodes={rfNodes}
-        edges={rfEdges}
-        nodeTypes={nodeTypes}
+        nodes={nodesWithData}
+        edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
+        className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
       >
-        <MiniMap />
-        <Controls />
-        <Background />
+        <Background color="#cbd5e1" gap={16} size={0.5} />
+        <FlowActions nodes={nodes} />
+        <Controls showInteractive={true} />
+        <MiniMap
+          nodeColor={(node) => {
+            switch (node.type) {
+              case "funnel":
+                return "#fbbf24";
+              case "speaker":
+                return "#d946ef";
+              default:
+                return "#2563eb";
+            }
+          }}
+          maskColor="rgba(0, 0, 0, 0.1)"
+          style={{
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            border: "2px solid #2563eb",
+            borderRadius: "8px",
+          }}
+        />
       </ReactFlow>
     </div>
   );
 }
 
-function mergeGraphs(base: any, addition: any, parentId: string) {
-  const ids = new Set(base.nodes.map((n: any) => n.id));
-  const newNodes = (addition?.nodes ?? []).filter((n: any) => n?.id && !ids.has(n.id));
-  const mergedNodes = [...base.nodes, ...newNodes];
+function FlowActions({ nodes }: { nodes: Node[] }) {
+  const rf = useReactFlow();
 
-  const eids = new Set(base.edges.map((e: any) => e.id));
-  const newEdges = (addition?.edges ?? []).filter((e: any) => e?.id && !eids.has(e.id));
+  useEffect(() => {
+    if (nodes.length) {
+      const t = setTimeout(() => {
+        try {
+          rf.fitView({ padding: 0.12, duration: 600 });
+        } catch (e) {
+          //
+        }
+      }, 50);
+      return () => clearTimeout(t);
+    }
+  }, [nodes.length, rf]);
 
-  const childIds = newNodes.map((n: any) => n.id);
-  childIds.forEach((cid: string) => {
-    const exists = newEdges.some((e: any) => e.source === parentId && e.target === cid);
-    if (!exists) newEdges.push({ id: `${parentId}-${cid}`, source: parentId, target: cid, label: "" });
-  });
-
-  const mergedEdges = [...base.edges, ...newEdges];
-  return { nodes: mergedNodes, edges: mergedEdges };
+  return null;
 }

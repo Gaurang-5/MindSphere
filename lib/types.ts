@@ -1,28 +1,40 @@
 export type FlowNode = {
-id: string;
-title: string;
-summary?: string;
-details?: string;
-level: number; // depth level; 0=root
-children?: string[]; // child node ids
+  id: string;
+  title: string;
+  summary?: string;
+  details?: string;
+  level: number; // depth level; 0=root
+  children?: string[]; // child node ids
 };
 
 
 export type FlowEdge = {
-id: string;
-source: string;
-target: string;
-label?: string;
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
 };
 
 
 export type FlowGraph = {
-nodes: FlowNode[];
-edges: FlowEdge[];
+  nodes: FlowNode[];
+  edges: FlowEdge[];
 };
 
 
 export type ExpandRequest = {
-nodeId: string;
-context: string; // text prompt or parent topic for better expansion
+  nodeId: string;
+  context: string; // text prompt or parent topic for better expansion
+};
+
+
+// Added NodeData expected by the React Flow nodes used in components
+export type NodeData = {
+  title?: string;
+  subtitle?: string;
+  content?: string;
+  isLoading?: boolean;
+  expandNode?: (id: string) => void;
+  variant?: "output" | "purpose" | "safety" | "model" | "context";
+  sections?: string[];
 };

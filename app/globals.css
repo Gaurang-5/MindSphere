@@ -2,9 +2,309 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global tweaks */
 html, body { height: 100%; }
 body { @apply bg-slate-50 text-slate-800; }
 
+#flow-wrapper { height: 100%; }
+#__next { height: 100%; }
+
+.card-base {
+  @apply rounded-xl border-2 shadow-lg transition-all duration-200 hover:shadow-xl;
+}
+
+/* ===== ENHANCED EDGE STYLING - BROADER & MORE VISIBLE ===== */
+.react-flow__edge {
+  stroke-width: 5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.react-flow__edge:hover {
+  stroke-width: 5.5;
+  filter: drop-shadow(0 0 16px rgba(37, 99, 235, 0.8));
+}
+
+.react-flow__edge.animated {
+  animation: edgeFlow 2s linear infinite;
+}
+
+@keyframes edgeFlow {
+  0% { 
+    stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.7));
+  }
+  100% { 
+    stroke-dashoffset: 18;
+    filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.4));
+  }
+}
+
+.react-flow__edge-path {
+  stroke: #2563eb;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.3));
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #1e40af;
+  stroke-width: 6;
+  filter: drop-shadow(0 0 16px rgba(30, 64, 175, 0.6));
+}
+
+.react-flow__edge-label {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  color: #1e40af;
+  border: 2px solid #2563eb;
+  border-radius: 24px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+  backdrop-filter: blur(8px);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-label {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: white;
+  border-color: #1e40af;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.5);
+  transform: scale(1.15);
+}
+
+/* ===== MARKER STYLING ===== */
+.react-flow__edge-marker-end,
+.react-flow__edge-marker-start {
+  transition: all 0.3s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-marker-end,
+.react-flow__edge:hover .react-flow__edge-marker-start {
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.8));
+}
+
+.react-flow__edge.selected .react-flow__edge-marker-end,
+.react-flow__edge.selected .react-flow__edge-marker-start {
+  filter: drop-shadow(0 0 12px rgba(30, 64, 175, 0.95));
+}
+
+/* ===== Node Semantic Palettes ===== */
+.card-output { 
+  background: linear-gradient(135deg, #fff7ed 0%, #fffaf0 100%);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.card-output:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.1);
+}
+
+.card-purpose { 
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fdff 100%);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+.card-purpose:hover {
+  border-color: rgba(6, 182, 212, 0.6);
+  box-shadow: 0 10px 28px rgba(6, 182, 212, 0.1);
+}
+
+.card-safety  { 
+  background: linear-gradient(135deg, #faf5ff 0%, #fbf8ff 100%);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.card-safety:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 10px 28px rgba(168, 85, 247, 0.1);
+}
+
+.card-model {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+.card-model:hover {
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.1);
+}
+
+/* ===== Handle Styling ===== */
+.react-flow__handle {
+  background-color: #2563eb;
+  border: 3px solid white;
+  width: 16px;
+  height: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), inset 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.react-flow__handle:hover {
+  background-color: #1e40af;
+  transform: scale(1.5);
+  box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.35), inset 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.react-flow__handle-connected {
+  background-color: #16a34a;
+}
+
+/* ===== Background Grid ===== */
+.react-flow__background {
+  background-color: #f8fafc;
+}
+
+.react-flow__background circle {
+  fill: #cbd5e1;
+  opacity: 0.35;
+}
+
+/* ===== Mini Map ===== */
+.react-flow__minimap {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  border: 2px solid #2563eb;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.15);
+}
+
+.react-flow__minimap-canvas {
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.1));
+}
+
+/* ===== Controls ===== */
+.react-flow__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 8px;
+  border: 2px solid #2563eb;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.react-flow__controls button {
+  background-color: white;
+  border: 2px solid #93c5fd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e40af;
+  font-size: 18px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.react-flow__controls button:hover {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* ===== Selected Node/Edge ===== */
+.react-flow__node.selected {
+  box-shadow: 0 0 0 3px #2563eb, 0 12px 40px rgba(37, 99, 235, 0.3);
+  outline: 3px solid #2563eb;
+  outline-offset: 6px;
+}
+
+.react-flow__edge.selected {
+  stroke: #1e40af;
+  stroke-width: 6;
+  filter: drop-shadow(0 0 16px rgba(30, 64, 175, 0.8));
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== Smooth Transitions ===== */
+.react-flow__node,
+.react-flow__edge {
+  transition: opacity 0.2s ease;
+}
+
+.react-flow__node:hover,
+.react-flow__edge:hover {
+  opacity: 1;
+}
+
+/* Connection line styling during drag */
+.react-flow__connection-path {
+  stroke: #2563eb;
+  stroke-width: 4;
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.4));
+}
+
 /* Optional helper for React Flow container heights */
 #flow-wrapper { height: calc(100vh - 280px); }
+
+/* styles.css additions */
+
+/* pastel card palettes */
+.card-base {
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(16,24,40,0.06);
+  border: 1px solid rgba(15,23,42,0.04);
+  padding: 14px;
+  width: 320px; /* keep aligned with dagre nodeWidth */
+  min-height: 120px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* palettes for semantic nodes */
+.card-output { background: linear-gradient(180deg,#fff7ed,#fffaf0); border-color: rgba(245,158,11,0.08); }
+.card-purpose { background: linear-gradient(180deg,#f0f9ff,#f8fdff); border-color: rgba(6,182,212,0.06); }
+.card-safety  { background: linear-gradient(180deg,#faf5ff,#fbf8ff); border-color: rgba(168,85,247,0.06); }
+.card-model   { background: linear-gradient(180deg,#ffffff,#fbfbff); border-color: rgba(99,102,241,0.06); }
+
+/* header */
+.card-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  font-weight:700;
+  color:#0f172a;
+  margin-bottom:8px;
+}
+
+/* dashed inner boxes like example */
+.inner-section {
+  border:2px dashed rgba(15,23,42,0.06);
+  border-radius:8px;
+  padding:8px;
+  margin-bottom:8px;
+  background: rgba(255,255,255,0.6);
+}
+
+/* funnel special shape (triangle) */
+.funnel-svg { width: 160px; height: 120px; display:block; margin: 0 auto; }
+
+/* speaker / output */
+.speaker-box { display:flex; align-items:center; gap:8px; padding:10px; border-radius:10px; background: linear-gradient(90deg,#eef2ff,#f8fafc); }
+
+/* small text styles */
+.small-muted { color:#475569; font-size:12px; }
+

@@ -7,8 +7,11 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { nodeId, title, level, context } = await req.json();
-    if (!nodeId || !title) {
+    const body = await req.json();
+    // accept either title or nodeTitle (client sends nodeTitle)
+    const { nodeId, title, nodeTitle, level, context } = body;
+    const resolvedTitle = nodeTitle ?? title;
+    if (!nodeId || !resolvedTitle) {
       return NextResponse.json(
         { error: "Missing nodeId/title" },
         { status: 400 }
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
         {
           role: "user",
           content: `${EXPAND_JSON_INSTRUCTIONS}
-Parent: ${title}
+Parent: ${resolvedTitle}
 Parent level: ${Number(level) ?? 0}
 Global context: ${context ?? ""}`,
         },

@@ -8,7 +8,7 @@ export default function NodeCard({ data }: { data: any }) {
   const { title, summary, details, onExpand } = data;
   return (
     <motion.div layout className="rounded-xl bg-white border border-slate-200 shadow-sm p-3 w-[240px]">
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Left} />
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-semibold text-slate-800 text-sm">{title}</h3>
         {onExpand && (
@@ -32,7 +32,7 @@ export default function NodeCard({ data }: { data: any }) {
             ))}
         </ul>
       )}
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Right} />
     </motion.div>
   );
 }
