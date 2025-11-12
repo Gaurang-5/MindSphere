@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getClient, MODEL } from "@/lib/openai";
+import { generateWithGemini } from "@/lib/gemini";
 import { EXPAND_JSON_INSTRUCTIONS } from "@/lib/schema";
 import { ensureIds } from "@/lib/utils";
 
@@ -18,26 +18,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const openai = getClient();
     const system = "You expand a node into actionable sub-steps.";
-
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: `${EXPAND_JSON_INSTRUCTIONS}
+    const userPrompt = `${EXPAND_JSON_INSTRUCTIONS}
 Parent: ${resolvedTitle}
 Parent level: ${Number(level) ?? 0}
-Global context: ${context ?? ""}`,
-        },
-      ],
-      temperature: 0.7,
-    });
+Global context: ${context ?? ""}`;
 
-    const raw = completion.choices?.[0]?.message?.content ?? "{}";
+    const raw = await generateWithGemini(system, userPrompt, 0.7);
     const parsed = JSON.parse(raw);
     const graph = ensureIds(parsed);
 

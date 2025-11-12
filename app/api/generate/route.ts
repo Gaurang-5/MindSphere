@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getClient, MODEL } from "@/lib/openai";
+import { generateWithGemini } from "@/lib/gemini";
 import { FLOW_JSON_INSTRUCTIONS } from "@/lib/schema";
 import { ensureIds } from "@/lib/utils";
 
-export const runtime = "nodejs"; // more forgiving than "edge" while you iterate
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,20 +12,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
     }
 
-    const openai = getClient();
     const system = "You convert topics into structured flowcharts.";
+    const userPrompt = `${FLOW_JSON_INSTRUCTIONS}\nUser topic: ${prompt}`;
 
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: `${FLOW_JSON_INSTRUCTIONS}\nUser topic: ${prompt}` },
-      ],
-      temperature: 0.7,
-    });
-
-    const raw = completion.choices?.[0]?.message?.content ?? "{}";
+    const raw = await generateWithGemini(system, userPrompt, 0.7);
     const parsed = JSON.parse(raw);
     const graph = ensureIds(parsed);
 
