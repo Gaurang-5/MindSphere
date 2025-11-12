@@ -6,10 +6,10 @@ export function getGeminiClient() {
   return new GoogleGenerativeAI(apiKey);
 }
 
-// Use Gemini 1.5 Pro for production, Flash for development
+// Use Gemini 2.5 Pro for production, Flash for development
 export const GEMINI_MODEL = process.env.NODE_ENV === "production" 
-  ? "gemini-1.5-pro" 
-  : "gemini-1.5-flash";
+  ? "gemini-2.5-pro" 
+  : "gemini-2.5-flash";
 
 export async function generateWithGemini(
   systemPrompt: string,
