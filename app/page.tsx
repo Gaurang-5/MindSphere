@@ -5,13 +5,30 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import FlowCanvas from "@/components/FlowCanvas";
 import LoadingFlowchart from "@/components/LoadingFlowchart";
+import Landing from "@/components/Landing";
+import { useSession } from "next-auth/react";
 
 export default function Page() {
+  const { data: session, status } = useSession();
+  const [showApp, setShowApp] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [context, setContext] = useState("");
   const [graph, setGraph] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Show app only if authenticated and user clicked start
+  const isAuthenticated = status === "authenticated";
+
+  // If not authenticated, always show landing page
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  // If authenticated but user hasn't clicked start, show landing page with start button
+  if (!showApp) {
+    return <Landing onStartClick={() => setShowApp(true)} />;
+  }
 
   const generate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
