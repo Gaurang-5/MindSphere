@@ -113,7 +113,7 @@ export default function FlowCanvas({
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
         rfNodes,
         rfEdges,
-        "LR"
+        "TB"
       );
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
@@ -211,7 +211,7 @@ export default function FlowCanvas({
         const rfNodes = toReactFlowNodes(mergedNodes);
         const rfEdges = toReactFlowEdges(mergedEdges);
         const { nodes: layoutedNodes, edges: layoutedEdges } =
-          getLayoutedElements(rfNodes, rfEdges, "LR");
+          getLayoutedElements(rfNodes, rfEdges, "TB");
 
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);

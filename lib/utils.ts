@@ -81,10 +81,10 @@ export function getLayoutedElements(
   // dagre setup
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  // Dynamic spacing: more vertical, less horizontal, adjusted by node count
+  // Dynamic spacing optimized for vertical (TB) layout
   const nodeCount = (nodes ?? []).length;
-  const dynamicNodeSep = Math.max(40, 120 - nodeCount * 2); // tighter horizontal as more nodes
-  const dynamicRankSep = Math.min(500, 200 + nodeCount * 5); // more vertical as more nodes
+  const dynamicNodeSep = direction === "TB" ? 120 : Math.max(40, 120 - nodeCount * 2); // horizontal spacing between nodes
+  const dynamicRankSep = direction === "TB" ? 180 : Math.min(500, 200 + nodeCount * 5); // vertical spacing between levels
   dagreGraph.setGraph({ rankdir: direction, nodesep: dynamicNodeSep, ranksep: dynamicRankSep });
 
   const nodeWidth = 340;
